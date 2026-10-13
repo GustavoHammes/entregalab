@@ -1,0 +1,15 @@
+node_modules/
+*.tsbuildinfo
+backups/
+.env.production
+dist/
+coverage/
+.env
+.env.local
+.env.*
+!.env.example
+*.dump
+npm-debug.log*
+.DS_Store
+.vscode/
+.codex-logs/

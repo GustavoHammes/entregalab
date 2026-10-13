@@ -1,0 +1,14 @@
+name: Validate
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and test against isolated PostgreSQL
+        run: docker compose -f docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from tests
+      - name: Stop test services
+        if: always()
+        run: docker compose -f docker-compose.test.yml down

@@ -1,0 +1,46 @@
+name: entregalab-production
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: entregalab
+      POSTGRES_DB: entregalab
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Execute npm run setup:production primeiro}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U entregalab -d entregalab"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+  app:
+    build: .
+    environment:
+      NODE_ENV: production
+      PORT: 3333
+      DATABASE_URL: postgresql://entregalab:${POSTGRES_PASSWORD}@postgres:5432/entregalab
+      JWT_SECRET: ${JWT_SECRET:?Execute npm run setup:production primeiro}
+      JWT_EXPIRES_IN: 7d
+      CORS_ORIGIN: ${APP_ORIGIN:-http://localhost:8080}
+      SECURE_COOKIES: ${SECURE_COOKIES:-false}
+      TRUST_PROXY: ${TRUST_PROXY:-false}
+    ports:
+      - "${APP_BIND:-127.0.0.1}:${APP_PORT:-8080}:3333"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3333/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 15s
+      start_period: 30s
+      retries: 3
+volumes:
+  postgres_data:

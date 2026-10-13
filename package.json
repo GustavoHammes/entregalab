@@ -1,0 +1,19 @@
+{
+  "name": "entregalab",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "test": "npm run test -w @entregalab/api",
+    "setup:production": "node scripts/setup-production.mjs",
+    "dev:api": "npm run dev -w @entregalab/api",
+    "dev:web": "npm run dev -w @entregalab/web",
+    "build": "npm run build -w @entregalab/api && npm run build -w @entregalab/web",
+    "typecheck": "npm run typecheck -w @entregalab/api && npm run typecheck -w @entregalab/web"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

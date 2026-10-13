@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: entregalab
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: SECURE_COOKIES
+        value: "true"
+      - key: TRUST_PROXY
+        value: "true"
+      - key: CORS_ORIGIN
+        value: ""
