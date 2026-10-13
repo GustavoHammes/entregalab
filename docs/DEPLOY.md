@@ -6,6 +6,12 @@ O mesmo Dockerfile usado no WSL funciona no Render. A API serve o React compilad
 
 Repositorio escolhido: https://github.com/GustavoHammes/entregalab, branch `main`.
 
+Servico criado no workspace `Gustavo Hammes's Workspace`: `entregalab`, Docker, plano Free, regiao Ohio, deploy automatico da branch `main`.
+
+- Painel: https://dashboard.render.com/web/srv-db76o8ks728c73dklohg
+- URL reservada: https://entregalab-yoes.onrender.com
+- O site so fica operacional depois de configurar `DATABASE_URL` e o deploy atingir `live`.
+
 1. Abra https://github.com/new usando sua conta.
 2. Nome sugerido: `entregalab`.
 3. Escolha **Private** inicialmente. Pode mudar para publico depois para o portfolio.
@@ -19,6 +25,8 @@ Nao publique `.env`, `.env.production`, dumps de backup ou senhas. O `.gitignore
 Projeto identificado: `icy-water-05832518` (`entregalab`), branch `br-flat-frog-b5yx8vvh` (`production`), banco `neondb`, PostgreSQL 18, regiao AWS Ohio (`aws-us-east-2`). Para o Render, escolha a regiao `ohio`.
 
 A variavel `DATABASE_URL` precisa da connection string que comeca com `postgresql://`. Uma chave de API do Neon ou uma chave primaria de tabela nao substitui essa conexao. O codigo usa `pg` para abrir a conexao PostgreSQL.
+
+No servico ja criado, abra **Environment > Add Environment Variable**, use a chave `DATABASE_URL`, cole a string do Neon e salve com redeploy. `JWT_SECRET` ja foi gerado e configurado no Render; nao substitua por uma senha pessoal. `NODE_ENV=production`, `SECURE_COOKIES=true` e `TRUST_PROXY=true` tambem estao configurados. Use **Settings > Health Check Path** para definir `/health` se o painel permitir.
 
 1. Abra https://console.neon.tech e crie sua conta.
 2. Crie um projeto chamado `entregalab` no plano **Free**.
