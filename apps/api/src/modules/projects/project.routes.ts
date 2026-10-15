@@ -10,6 +10,7 @@ import { notifyProject } from '../notifications/notification.repository.js';
 
 import { createProject, listProjectsForUser } from './project.repository.js';
 import { createProjectBodySchema } from './project.schemas.js';
+import { projectProgress } from './project.progress.js';
 
 export async function projectRoutes(app: FastifyInstance) {
   app.addHook('preHandler', app.authenticate);
@@ -28,6 +29,13 @@ export async function projectRoutes(app: FastifyInstance) {
     });
 
     return reply.code(201).send({ project });
+  });
+
+  app.get('/:projectId/progress', async (request) => {
+    const { projectId } = projectParams.parse(request.params);
+    const { days } = z.object({ days: z.enum(['7', '30', '90']).default('30') }).parse(request.query);
+    await requireMembership(projectId, request.user.sub);
+    return projectProgress(projectId, Number(days));
   });
 
   app.patch('/:projectId', async (request) => {

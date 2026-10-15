@@ -1,18 +1,20 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Bell, FlaskConical, Columns3, LayoutDashboard, ListTodo, LogOut, Moon, Plus, RefreshCw, Search, Settings2, Sun, Trash2, Users, Layers3 } from 'lucide-react';
 import { api, ApiError, json } from './api';
 import { Auth } from './Auth';
 import { Avatar, Board, TaskList } from './Board';
-import { Dashboard } from './Dashboard';
 import { Modal } from './Modal';
 import { TaskEditor } from './TaskEditor';
 import { Demo } from './Demo';
 import { Notifications } from './Notifications';
+import kanbanIcon from '../kanban.svg';
 import { overdue, priorityLabels, today, type Member, type Project, type Status, type Task, type User, type View } from './types';
 import './styles.css';
 
+const Dashboard = lazy(() => import('./Dashboard').then((module) => ({ default: module.Dashboard })));
+
 const navigation = [{ id: 'dashboard' as const, label: 'Dashboard', icon: LayoutDashboard }, { id: 'board' as const, label: 'Board', icon: Columns3 }, { id: 'list' as const, label: 'List', icon: ListTodo }, { id: 'demo' as const, label: 'Laboratorio', icon: FlaskConical }, { id: 'notifications' as const, label: 'Notificacoes', icon: Bell }];
-function getView(): View { const view = window.location.hash.slice(1); return navigation.some((item) => item.id === view) ? view as View : 'dashboard'; }
+function getView(): View { const view = window.location.hash.slice(1).split('?')[0]; return navigation.some((item) => item.id === view) ? view as View : 'dashboard'; }
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -118,7 +120,7 @@ export default function App() {
   if (!user) return <><Auth onLogin={(user) => { setError(''); setUser(user); }} />{error && <div role="alert" className="connection-error">{error}<button className="text-button" onClick={() => window.location.reload()}>Tentar novamente</button></div>}</>;
   const boardProps = { tasks: filtered, members, pending, onAdd: (status: Status) => setEditor({ task: null, status }), onEdit: (task: Task) => setEditor({ task, status: task.status }), onDelete: deleteTask, onMove: moveTask };
   return <div className="shell">
-    <aside className="sidebar"><div className="brand"><Layers3 size={25} /><strong>EntregaLab</strong></div><span className="workspace-label">Espaco de trabalho</span>
+    <aside className="sidebar"><div className="brand"><img className="brand-icon" src={kanbanIcon} alt="" width={30} height={30} /><strong>EntregaLab</strong></div><span className="workspace-label">Espaco de trabalho</span>
       <nav className="primary-nav" aria-label="Navegacao principal">{navigation.map(({ id, label, icon: Icon }) => <button key={id} aria-current={view === id ? 'page' : undefined} className={view === id ? 'active' : ''} onClick={() => navigate(id)}><Icon size={19} />{label}</button>)}</nav>
       <div className="project-selector"><div className="section-heading"><span>Projetos</span><button className="icon-button" title="Novo projeto" aria-label="Novo projeto" disabled={pending} onClick={() => setProjectEditor('new')}><Plus size={17} /></button></div>
         <select aria-label="Projeto atual" value={projectId} disabled={pending} onChange={(event) => setProjectId(event.target.value)}>{!projects.length && <option value="">Nenhum projeto</option>}{projects.map((project) => <option key={project.id} value={project.id}>{project.isDemo ? '[Teste] ' : ''}{project.name}</option>)}</select>
@@ -141,7 +143,7 @@ export default function App() {
         <select aria-label="Filtrar prazo" value={due} onChange={(event) => setDue(event.target.value)}><option value="all">Todos os prazos</option><option value="overdue">Atrasadas</option><option value="week">Proximos 7 dias</option></select>
       </section>}
       {view === 'demo' ? <Demo projects={projects} onRefresh={reloadProjects} onOpen={(id) => { setProjectId(id); navigate('board'); }} /> : view === 'notifications' ? <Notifications onCount={setUnreadCount} onOpen={(id, taskId) => { notificationTarget.current = taskId; setProjectId(id); navigate('board'); if (taskId && id === projectId) { const task = tasks.find((task) => task.id === taskId); if (task) { notificationTarget.current = null; setEditor({ task, status: task.status }); } } }} /> : loading ? <div className="empty-state" role="status">Carregando projeto...</div> : !project ? <div className="empty-state"><Layers3 size={32} /><h2>Novo projeto, novas entregas</h2><button className="primary-button" onClick={() => setProjectEditor('new')}><Plus size={17} />Criar projeto</button></div> : <>
-        {view === 'dashboard' && <Dashboard tasks={tasks} members={members} onEdit={boardProps.onEdit} onList={() => navigate('list')} />}
+        {view === 'dashboard' && <Suspense fallback={<div className="empty-state" role="status">Carregando dashboard...</div>}><Dashboard projectId={projectId} tasks={tasks} members={members} onEdit={boardProps.onEdit} onList={() => navigate('list')} /></Suspense>}
         {view === 'board' && <Board {...boardProps} />}{view === 'list' && <TaskList {...boardProps} />}
       </>}
     </main>

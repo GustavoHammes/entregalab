@@ -4,6 +4,7 @@ backups/
 .env.production
 dist/
 coverage/
+.vitest/
 .env
 .env.local
 .env.*

@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react';
-import { ArrowRight, Layers3, FlaskConical } from 'lucide-react';
+import { ArrowRight, FlaskConical } from 'lucide-react';
 import { api, json } from './api';
 import type { User } from './types';
+import kanbanIcon from '../kanban.svg';
 
 export function Auth({ onLogin }: { onLogin: (user: User) => void }) {
   const [register, setRegister] = useState(false);
@@ -27,7 +28,7 @@ export function Auth({ onLogin }: { onLogin: (user: User) => void }) {
     finally { setPending(false); }
   }
   return <main className="auth-page">
-    <div className="auth-brand"><Layers3 size={28} /><strong>EntregaLab</strong></div>
+    <div className="auth-brand"><img className="brand-icon" src={kanbanIcon} alt="" width={32} height={32} /><strong>EntregaLab</strong></div>
     <section className="auth-form">
       <p className="eyebrow">Seu espaco de trabalho</p>
       <h1>{register ? 'Criar conta' : 'Entrar'}</h1>

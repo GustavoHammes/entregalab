@@ -19,5 +19,15 @@ export async function migrateDatabase() {
       await client.query(await readFile(new URL('../../../../database/migrations/002_demo_notifications.sql', import.meta.url), 'utf8'));
       await client.query('INSERT INTO schema_migrations (version) VALUES ($1)', ['002_demo_notifications']);
     }
+    const email = await client.query('SELECT version FROM schema_migrations WHERE version = $1', ['003_email']);
+    if (!email.rowCount) {
+      await client.query(await readFile(new URL('../../../../database/migrations/003_email.sql', import.meta.url), 'utf8'));
+      await client.query('INSERT INTO schema_migrations (version) VALUES ($1)', ['003_email']);
+    }
+    const progress = await client.query('SELECT version FROM schema_migrations WHERE version = $1', ['004_project_progress']);
+    if (!progress.rowCount) {
+      await client.query(await readFile(new URL('../../../../database/migrations/004_project_progress.sql', import.meta.url), 'utf8'));
+      await client.query('INSERT INTO schema_migrations (version) VALUES ($1)', ['004_project_progress']);
+    }
   });
 }

@@ -1,8 +1,9 @@
 import { ArrowUpRight, CalendarDays } from 'lucide-react';
 import { Avatar } from './Board';
+import { ProjectProgress } from './ProjectProgress';
 import { formatDate, overdue, statuses, statusLabels, type Member, type Task } from './types';
 
-export function Dashboard({ tasks, members, onEdit, onList }: { tasks: Task[]; members: Member[]; onEdit: (task: Task) => void; onList: () => void }) {
+export function Dashboard({ projectId, tasks, members, onEdit, onList }: { projectId: string; tasks: Task[]; members: Member[]; onEdit: (task: Task) => void; onList: () => void }) {
   const completed = tasks.filter((task) => task.status === 'done').length;
   const counts = statuses.map((status) => ({ status, count: tasks.filter((task) => task.status === status).length }));
   const max = Math.max(1, ...counts.map((item) => item.count));
@@ -14,6 +15,7 @@ export function Dashboard({ tasks, members, onEdit, onList }: { tasks: Task[]; m
   ];
   return <div className="dashboard">
     <div className="metrics">{metrics.map((item) => <article key={item.label} className={`metric ${item.color}`}><span>{item.label}</span><strong>{item.count}</strong><small>{item.detail}</small></article>)}</div>
+    <ProjectProgress key={projectId} projectId={projectId} total={tasks.length} completed={completed} revision={tasks.map((task) => `${task.id}:${task.updatedAt}`).join(',')} />
     <div className="dashboard-columns">
       <section className="dashboard-section"><div className="section-heading"><h3>Distribuicao das tarefas</h3><span className="muted">{tasks.length} no total</span></div>
         <div className="bar-chart">{counts.map((item) => <div className="bar-item" key={item.status}><strong>{item.count}</strong><div className="bar-track"><span className={item.status} style={{ height: `${item.count / max * 100}%` }} /></div><small>{statusLabels[item.status]}</small></div>)}</div>

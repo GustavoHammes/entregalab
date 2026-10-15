@@ -65,6 +65,8 @@ O deploy externo e uma instalacao separada do WSL. Os dados locais nao sao copia
 
 ## Conferir depois do deploy
 
+O envio opcional de emails usa Gmail API na propria API, sem SMTP ou Vercel. Siga [EMAIL.md](EMAIL.md) para criar credenciais OAuth, definir o administrador pelo ID e conectar o Gmail; nao reutilize senhas de aplicativo. O site e as notificacoes internas continuam funcionando com o envio desligado.
+
 - `/health` retorna `{"status":"ok","database":"ok"}`.
 - Cadastro e login funcionam pelo HTTPS.
 - Uma tarefa criada aparece no Board, na List e nas metricas do Dashboard.

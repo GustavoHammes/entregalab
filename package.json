@@ -6,7 +6,7 @@
     "apps/*"
   ],
   "scripts": {
-    "test": "npm run test -w @entregalab/api",
+    "test": "npm run test -w @entregalab/api && npm run test -w @entregalab/web",
     "setup:production": "node scripts/setup-production.mjs",
     "dev:api": "npm run dev -w @entregalab/api",
     "dev:web": "npm run dev -w @entregalab/web",

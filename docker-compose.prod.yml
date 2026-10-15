@@ -25,6 +25,14 @@ services:
       CORS_ORIGIN: ${APP_ORIGIN:-http://localhost:8080}
       SECURE_COOKIES: ${SECURE_COOKIES:-false}
       TRUST_PROXY: ${TRUST_PROXY:-false}
+      APP_URL: ${APP_ORIGIN:-http://localhost:8080}
+      EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
+      EMAIL_MAX_PER_DAY: ${EMAIL_MAX_PER_DAY:-100}
+      EMAIL_ADMIN_USER_ID: ${EMAIL_ADMIN_USER_ID:-}
+      EMAIL_TOKEN_KEY: ${EMAIL_TOKEN_KEY:-}
+      GMAIL_CLIENT_ID: ${GMAIL_CLIENT_ID:-}
+      GMAIL_CLIENT_SECRET: ${GMAIL_CLIENT_SECRET:-}
+      GMAIL_USER: ${GMAIL_USER:-}
     ports:
       - "${APP_BIND:-127.0.0.1}:${APP_PORT:-8080}:3333"
     depends_on:

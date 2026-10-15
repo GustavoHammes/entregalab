@@ -13,6 +13,7 @@ import { projectRoutes } from './modules/projects/project.routes.js';
 import { taskRoutes } from './modules/tasks/task.routes.js';
 import { demoRoutes } from './modules/demo/demo.routes.js';
 import { notificationRoutes } from './modules/notifications/notification.routes.js';
+import { emailRoutes } from './modules/email/email.routes.js';
 import { AppError } from './lib/errors.js';
 import { authPlugin } from './plugins/auth.js';
 import { registerErrorHandler } from './plugins/error-handler.js';
@@ -26,7 +27,8 @@ export async function buildApp() {
     trustProxy: env.TRUST_PROXY,
     bodyLimit: 65536,
     logger: {
-      level: env.NODE_ENV === 'test' ? 'silent' : 'info'
+      level: env.NODE_ENV === 'test' ? 'silent' : 'info',
+      serializers: { req: (request) => ({ method: request.method, url: request.url?.split('?')[0], hostname: request.hostname }) }
     }
   });
 
@@ -59,6 +61,7 @@ export async function buildApp() {
   await app.register(taskRoutes, { prefix: '/api/projects' });
   await app.register(demoRoutes, { prefix: '/api/demo' });
   await app.register(notificationRoutes, { prefix: '/api/notifications' });
+  await app.register(emailRoutes, { prefix: '/api/email' });
 
   if (env.WEB_DIR) {
     await app.register(staticFiles, { root: resolve(env.WEB_DIR), prefix: '/', wildcard: false,

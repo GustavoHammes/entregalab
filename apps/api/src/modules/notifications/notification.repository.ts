@@ -54,6 +54,6 @@ export async function markNotificationsRead(userId: string, id?: string) {
 }
 export async function getPreferences(userId: string) {
   await query('INSERT INTO notification_preferences (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [userId]);
-  return (await query(`SELECT project_updates AS "projectUpdates", task_changes AS "taskChanges", due_reminders AS "dueReminders"
+  return (await query(`SELECT project_updates AS "projectUpdates", task_changes AS "taskChanges", due_reminders AS "dueReminders", email_enabled AS "emailEnabled"
     FROM notification_preferences WHERE user_id = $1`, [userId])).rows[0];
 }

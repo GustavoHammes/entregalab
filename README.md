@@ -175,7 +175,17 @@ Na pagina `/#notifications`, as notificacoes podem ser abertas, marcadas como li
 
 Lembretes de prazo sao criados para tarefas pendentes com vencimento ate amanha, considerando `America/Sao_Paulo`. Recebem o lembrete o lider e o responsavel; tarefas sem responsavel avisam toda a equipe. Ha um aviso por tarefa, data de prazo e destinatario, sem repeticao a cada verificacao. Concluir a tarefa marca seus lembretes como lidos. Remover um membro revoga tambem a leitura das notificacoes daquele projeto.
 
-A verificacao roda ao iniciar, a cada cinco minutos com o servidor ativo, ao entrar na conta e no botao de atualizacao da caixa de entrada. No Render Free, o processamento acompanha o periodo em que o servico esta acordado. Esta etapa usa apenas notificacoes dentro do site: nenhum email ou push externo e enviado.
+A verificacao roda ao iniciar, a cada cinco minutos com o servidor ativo, ao entrar na conta e no botao de atualizacao da caixa de entrada. No Render Free, o processamento acompanha o periodo em que o servico esta acordado. As notificacoes dentro do site funcionam independentemente da configuracao de email; push externo nao esta implementado.
+
+O envio opcional por Gmail API roda na propria API no Render, por HTTPS e sem SMTP. Um administrador configurado por ID conecta a conta remetente via OAuth. Cada destinatario confirma o proprio endereco e ativa os emails nas preferencias. O refresh token e criptografado; uma fila transacional no PostgreSQL guarda envios, novas tentativas e resultados. Contas e projetos de demonstracao nunca enviam emails. Veja [docs/EMAIL.md](docs/EMAIL.md) para configurar o Google Cloud e o Render sem compartilhar segredos. O envio permanece desligado por padrao.
+
+## Icone e evolucao do projeto
+
+O arquivo `apps/web/kanban.svg` e usado como favicon e como marca no login e na sidebar. Ele precisa conter elementos visiveis, como `path` ou `rect`; somente a estrutura SVG com um grupo vazio nao desenha um icone. O Vite inclui o arquivo na compilacao e atualiza a referencia dos assets automaticamente.
+
+O Dashboard inclui um grafico Recharts de total de tarefas versus concluidas, percentual atual e periodos de 7, 30 ou 90 dias. `GET /api/projects/:projectId/progress?days=30` exige participacao no projeto. Snapshots diarios sao gravados no PostgreSQL na mesma transacao de criacao, exclusao e mudanca de status de tarefas, considerando `America/Sao_Paulo`. Dias sem atividade mantem o ultimo registro conhecido. A instalacao inicia o historico na data da migracao, sem inventar movimentacoes passadas; tarefas reabertas podem reduzir as concluidas e novas tarefas alteram o total.
+
+`npm test` executa as regras da API e os testes de componentes React com Vitest/Testing Library. O Compose de testes fornece um PostgreSQL isolado. Os testes de grafico verificam geometria SVG, periodos, estado inicial, erros e atualizacao; os de email usam um remetente simulado, sem mensagens reais.
 
 Endpoints adicionais: `POST /api/demo/session`, `POST /api/demo/projects`, `POST /api/demo/reset`, `GET /api/notifications`, `GET/PATCH /api/notifications/preferences`, `PATCH /api/notifications/:id/read`, `POST /api/notifications/read-all` e `POST /api/notifications/check-deadlines`. Equipes de exemplo recebem novos membros pelo campo `name`; projetos reais continuam usando o email de uma conta existente.
 
@@ -183,4 +193,4 @@ Veja [docs/DEPLOY.md](docs/DEPLOY.md) para criar o repositorio GitHub, o Neon Fr
 
 O modo local anterior usava tarefas de demonstracao em `localStorage`; esses exemplos nao sao importados como dados reais de contas. Esta versao usa exclusivamente o PostgreSQL para tarefas e projetos. Apenas a preferencia de tema continua local.
 
-Ainda nao inclui envio de email, recuperacao/verificacao de senha por email, anexos ou atualizacao em tempo real por WebSocket. Para uso critico de trabalho, adicione essas necessidades, monitore quotas e mantenha backups e hospedagem com disponibilidade adequada. A publicacao gratuita depende das contas e da configuracao de `DATABASE_URL` no Render.
+Ainda nao inclui recuperacao de senha por email, anexos, multiplos responsaveis por tarefa ou atualizacao em tempo real por WebSocket. Emails dependem da autorizacao Google e do servidor acordado, sem garantia de horario exato no Render Free. Para uso critico de trabalho, adicione essas necessidades, monitore quotas e mantenha backups e hospedagem com disponibilidade adequada. A publicacao gratuita depende das contas e da configuracao de `DATABASE_URL` no Render.

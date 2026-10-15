@@ -3,15 +3,18 @@ import { env } from './config/env.js';
 import { pool } from './db/pool.js';
 import { migrateDatabase } from './db/migrations.js';
 import { startMaintenance } from './modules/maintenance.js';
+import { startEmailWorker } from './modules/email/email.worker.js';
 
 await migrateDatabase();
 const app = await buildApp();
 let stopMaintenance: (() => Promise<void>) | undefined;
+let stopEmailWorker: (() => Promise<void>) | undefined;
 
 async function shutdown(signal: string) {
   app.log.info({ signal }, 'Shutting down API');
   await app.close();
   await stopMaintenance?.();
+  await stopEmailWorker?.();
   await pool.end();
   process.exit(0);
 }
@@ -25,6 +28,7 @@ try {
     port: env.PORT
   });
   stopMaintenance = startMaintenance(app);
+  stopEmailWorker = startEmailWorker(app);
 } catch (error) {
   app.log.error(error);
   process.exit(1);
