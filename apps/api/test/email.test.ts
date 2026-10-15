@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import { OAuth2Client } from 'google-auth-library';
 import { buildApp } from '../src/app.js';
 import { env } from '../src/config/env.js';
+import { parseEnvironment } from '../src/config/schema.js';
 import { pool, withTransaction } from '../src/db/pool.js';
 import { migrateDatabase } from '../src/db/migrations.js';
 import { digest, seal, unseal, verificationToken } from '../src/modules/email/email.crypto.js';
@@ -195,6 +196,24 @@ test('Gmail authorization, verified opt-in and durable email delivery', async (t
       await app.inject({ method: 'DELETE', url: `/api/projects/${projectId}/members/${recipient.id}`, headers: admin.headers });
       assert.equal(await processEmailQueue(send), 0); assert.equal(sent.length, 0);
       assert.equal((await pool.query('SELECT status FROM email_outbox WHERE id = $1', [id])).rows[0].status, 'cancelled');
+    });
+    await t.test('keeps projects and tasks usable with invalid optional email settings', async () => {
+      const previous = { ...env };
+      try {
+        for (const key of Object.keys(env)) Reflect.deleteProperty(env, key);
+        Object.assign(env, parseEnvironment({ ...process.env, EMAIL_ENABLED: 'true', EMAIL_ADMIN_USER_ID: 'user.id', EMAIL_TOKEN_KEY: 'invalid-key' }).env);
+        assert.equal((await app.inject({ url: '/health' })).statusCode, 200);
+        assert.equal((await app.inject({ url: '/api/projects', headers: admin.headers })).statusCode, 200);
+        const created = await app.inject({ method: 'POST', url: `/api/projects/${projectId}/tasks`, headers: admin.headers, payload: { title: 'Email configuration regression' } });
+        assert.equal(created.statusCode, 201, created.body);
+        const taskId = created.json().task.id;
+        assert.equal((await app.inject({ method: 'DELETE', url: `/api/projects/${projectId}/tasks/${taskId}`, headers: admin.headers })).statusCode, 204);
+        const settings = (await app.inject({ url: '/api/email/settings', headers: admin.headers })).json();
+        assert.equal(settings.available, false); assert.equal(settings.enabled, false); assert.equal(settings.isAdmin, false);
+        assert.equal((await app.inject({ method: 'POST', url: '/api/email/gmail/connect', headers: admin.headers })).statusCode, 403);
+        assert.equal((await app.inject({ method: 'POST', url: '/api/email/verification', headers: admin.headers })).statusCode, 503);
+        assert.equal(await processEmailQueue(async () => { assert.fail('Invalid email configuration must never send'); }), 0);
+      } finally { Object.assign(env, previous); }
     });
   } finally {
     await pool.query('DELETE FROM gmail_connection WHERE id = 1'); await pool.query('DELETE FROM email_daily_usage');

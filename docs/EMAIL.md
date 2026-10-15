@@ -43,6 +43,23 @@ Se `EMAIL_TOKEN_KEY` ja estiver configurada, preserve-a: alterar a chave exige c
 
 Salve com redeploy e aguarde o servico ficar **Live**. Valores vazios de variaveis opcionais sao aceitos enquanto o envio estiver desligado.
 
+### Se a configuracao de email estiver invalida
+
+O site continua funcionando, mas toda a integracao de email fica bloqueada ate corrigir a configuracao e fazer redeploy. Os logs mostram `Email disabled: invalid optional environment variables` e somente os nomes dos campos invalidos, nunca seus valores. Erros nas variaveis essenciais, como `DATABASE_URL` e `JWT_SECRET`, continuam impedindo a inicializacao por seguranca.
+
+- **`EMAIL_ADMIN_USER_ID`:** copie apenas o valor de `id` dentro de `user`, em <https://entregalab-yoes.onrender.com/api/auth/me>, estando logado na sua conta normal. O formato e `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`. Nao use o email, a URL, o texto literal `user.id`, o JSON inteiro ou aspas. Nao use o ID da conta de demonstracao.
+- **`EMAIL_TOKEN_KEY`:** precisa ter exatamente 64 caracteres de `0-9` e `a-f`. O gerador automatico do Render usa base64, que nao e o formato esperado aqui. Nao use o client secret do Google nem o comando de geracao como valor.
+
+Para gerar uma chave **nova**, no Ubuntu/WSL use `openssl rand -hex 32`. No PowerShell 7 do Windows, use:
+
+```powershell
+[Convert]::ToHexString([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(32)).ToLowerInvariant()
+```
+
+Cole apenas o resultado no valor de `EMAIL_TOKEN_KEY`, em **Environment** no Render. Nao envie a chave no chat nem a coloque no repositorio. Se ja havia um Gmail conectado, recupere a chave original; gerar outra impede descriptografar o token salvo e exige conectar o Gmail novamente.
+
+Depois de ajustar os campos, escolha **Save, rebuild, and deploy**, espere **Live** e continue em **Notificacoes > Email > Remetente do sistema > Conectar Gmail**. Nenhuma senha ou credencial Google precisa ser enviada pelo chat.
+
 ## 3. Autorizar a conta remetente
 
 1. Na conta administradora do EntregaLab, abra **Notificacoes > Email > Remetente do sistema**.
