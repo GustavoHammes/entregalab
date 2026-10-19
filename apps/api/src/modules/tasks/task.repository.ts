@@ -4,6 +4,7 @@ import { query, withTransaction } from '../../db/pool.js';
 import { AppError } from '../../lib/errors.js';
 import { taskFields } from './task.schemas.js';
 import { notifyProject } from '../notifications/notification.repository.js';
+import { lockProject } from '../projects/project.access.js';
 
 type TaskInput = z.infer<typeof taskFields>;
 const statusNames = { todo: 'A fazer', in_progress: 'Em andamento', in_review: 'Em revisao', done: 'Concluido' };
@@ -34,12 +35,6 @@ async function assign(client: PoolClient, projectId: string, taskId: string, ass
   }
   await client.query('DELETE FROM task_assignees WHERE task_id = $1', [taskId]);
   if (assigneeId) await client.query('INSERT INTO task_assignees (task_id, user_id) VALUES ($1, $2)', [taskId, assigneeId]);
-}
-async function lockProject(client: PoolClient, projectId: string, userId: string) {
-  // Serialize board changes so simultaneous moves cannot produce duplicate positions.
-  await client.query('SELECT id FROM projects WHERE id = $1 FOR UPDATE', [projectId]);
-  const member = await client.query('SELECT 1 FROM project_members WHERE project_id = $1 AND user_id = $2', [projectId, userId]);
-  if (!member.rowCount) throw new AppError(404, 'PROJECT_NOT_FOUND', 'Projeto nao encontrado.');
 }
 export async function createTask(projectId: string, userId: string, input: TaskInput) {
   return withTransaction(async (client) => {

@@ -157,6 +157,8 @@ flowchart LR
 
 O estado `in_review` representa revisao por colegas antes da entrega. Todos os membros podem editar tarefas e mover entre os quatro estados para corrigir ou reabrir entregas. Somente o lider gerencia o projeto e os membros. Remover um membro revoga seu acesso e limpa suas atribuicoes naquele projeto.
 
+O acesso combina associacao ao projeto e papel local (`leader`/`member`), nao um administrador global. Escritas de projeto, equipe e tarefas revalidam a permissao na mesma transacao, depois do lock por projeto. Os testes negativos cobrem todas as rotas com `projectId`, troca de IDs e operacoes aguardando revogacao ou exclusao concorrente. Veja a [matriz de permissoes e os cenarios de concorrencia](docs/PERMISSIONS.md). Mudancas simultaneas validas no mesmo card seguem a ultima escrita; nao ha controle otimista de versao nesta etapa.
+
 Nesta versao, cada tarefa tem um responsavel principal na interface; o schema `task_assignees` permite evoluir para varios. A ordem do Board e salva no servidor, com lock por projeto para serializar movimentos simultaneos. O Dashboard agrega as tarefas carregadas do projeto, apropriado para pequenas equipes. O filtro de prazo considera a data local do navegador; tarefas concluidas nao contam como atrasadas.
 
 O banco usa as tabelas `users`, `projects`, `project_members`, `tasks`, `task_assignees` e `comments`. As consultas sao parametrizadas, senhas usam bcrypt, entradas sao validadas por Zod e cada operacao confirma participacao no projeto. Erros internos nao retornam stack traces. A sessao JWT expira em sete dias por padrao; logout remove o cookie deste navegador, sem revogacao global de tokens ja emitidos.

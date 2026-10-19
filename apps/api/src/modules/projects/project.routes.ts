@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { query, withTransaction } from '../../db/pool.js';
 import { AppError } from '../../lib/errors.js';
-import { requireMembership } from './project.access.js';
+import { lockProject, requireMembership } from './project.access.js';
 import { projectParams } from '../tasks/task.schemas.js';
 import { randomUUID } from 'node:crypto';
 import { hashPassword } from '../../lib/password.js';
@@ -43,7 +43,7 @@ export async function projectRoutes(app: FastifyInstance) {
     await requireMembership(projectId, request.user.sub, true);
     const body = createProjectBodySchema.parse(request.body);
     await withTransaction(async (client) => {
-      await client.query('SELECT id FROM projects WHERE id = $1 FOR UPDATE', [projectId]);
+      await lockProject(client, projectId, request.user.sub, true);
       await client.query('UPDATE projects SET name = $2, description = $3, sprint_start = $4, sprint_end = $5 WHERE id = $1',
         [projectId, body.name, body.description ?? null, body.sprintStart ?? null, body.sprintEnd ?? null]);
       await notifyProject(client, { projectId, actorId: request.user.sub, kind: 'project', title: 'Projeto atualizado', body: body.name });
@@ -53,7 +53,10 @@ export async function projectRoutes(app: FastifyInstance) {
   app.delete('/:projectId', async (request, reply) => {
     const { projectId } = projectParams.parse(request.params);
     await requireMembership(projectId, request.user.sub, true);
-    await query('DELETE FROM projects WHERE id = $1', [projectId]);
+    await withTransaction(async (client) => {
+      await lockProject(client, projectId, request.user.sub, true);
+      await client.query('DELETE FROM projects WHERE id = $1', [projectId]);
+    });
     return reply.code(204).send();
   });
   app.get('/:projectId/members', async (request) => {
@@ -67,11 +70,12 @@ export async function projectRoutes(app: FastifyInstance) {
     const { projectId } = projectParams.parse(request.params);
     await requireMembership(projectId, request.user.sub, true);
     const project = (await query<{ is_demo: boolean }>('SELECT is_demo FROM projects WHERE id = $1', [projectId])).rows[0];
+    if (!project) throw new AppError(404, 'PROJECT_NOT_FOUND', 'Projeto nao encontrado.');
     const body = project.is_demo ? z.object({ name: z.string().trim().min(2).max(120) }).strict().parse(request.body)
       : z.object({ email: z.string().trim().email() }).strict().parse(request.body);
     const password = project.is_demo ? await hashPassword(randomUUID()) : null;
     await withTransaction(async (client) => {
-      await client.query('SELECT id FROM projects WHERE id = $1 FOR UPDATE', [projectId]);
+      await lockProject(client, projectId, request.user.sub, true);
       const user = 'name' in body ? await client.query<{ id: string }>(`INSERT INTO users (name, email, password_hash, is_demo, demo_owner_id)
         VALUES ($1, $2, $3, $4, $5) RETURNING id`, [body.name, `member-${randomUUID()}@example.invalid`, password, true, request.user.sub])
         : await client.query<{ id: string }>('SELECT id FROM users WHERE email = $1 AND NOT is_demo', [body.email]);
@@ -85,7 +89,7 @@ export async function projectRoutes(app: FastifyInstance) {
     const { projectId, userId } = projectParams.extend({ userId: z.string().uuid() }).parse(request.params);
     await requireMembership(projectId, request.user.sub, true);
     await withTransaction(async (client) => {
-      await client.query('SELECT id FROM projects WHERE id = $1 FOR UPDATE', [projectId]);
+      await lockProject(client, projectId, request.user.sub, true);
       const member = await client.query('SELECT role FROM project_members WHERE project_id = $1 AND user_id = $2', [projectId, userId]);
       if (!member.rowCount) throw new AppError(404, 'MEMBER_NOT_FOUND', 'Membro nao encontrado.');
       if (member.rows[0].role === 'leader') throw new AppError(400, 'LEADER_REMOVAL', 'O lider do projeto nao pode ser removido.');
